@@ -4,8 +4,8 @@
 #SBATCH -o outfiles/train.o%j       # Name of stdout output file
 #SBATCH -e outfiles/train.e%j       # Name of stderr error file
 #SBATCH -p rtx           # Queue (partition) name
-#SBATCH -N 2               # Total # of nodes (must be 1 for serial)
-#SBATCH -n 2               # Total # of mpi tasks (should be 1 for serial)
+#SBATCH -N 1               # Total # of nodes (must be 1 for serial)
+#SBATCH -n 1               # Total # of mpi tasks (should be 1 for serial)
 ####SBATCH -t 24:00:00        # Run time (hh:mm:ss)
 #SBATCH -t 12:00:00        # Run time (hh:mm:ss)
 #SBATCH --mail-type=all    # Send email at begin and end of job
@@ -36,17 +36,15 @@ data_root_dir="/scratch1/07502/tg868016/training_data/"
 in_dir="Output_N170_L100_2"
 tgt_dir="Output_N1360_L100_2"
 
-###train_dirs="preprocessed/PART_0*.npy"
-train_disp="preprocessed/a_*disp.npy"
-train_vel="preprocessed/a_*vel.npy"
-###style_dirs="style/PART_0*.npy"
+train_disp="preprocessed/disp_a*_chunk000.npy"
+train_vel="preprocessed/vel_a*_chunk000.npy"
 style_dirs="style/a_*.npy"
 
 ### Distribute your files/directories to the local /tmp space of each compute node allotted for your job:
-distribute.bash $data_root_dir/$tgt_dir
+distribute.bash $data_root_dir/$in_dir/preprocessed
+distribute.bash $data_root_dir/$tgt_dir/preprocessed
 
 cd /scratch1/07502/tg868016/map2map/
-###srun m2m.py train \
 srun python /scratch1/07502/tg868016/map2map/m2m.py train \
     --train-in-patterns "$data_root_dir/$in_dir/$train_disp","$data_root_dir/$in_dir/$train_vel" \
     --train-tgt-patterns "$data_root_dir/$tgt_dir/$train_disp","$data_root_dir/$tgt_dir/$train_vel" \
@@ -59,22 +57,23 @@ srun python /scratch1/07502/tg868016/map2map/m2m.py train \
     --lr 1e-5 --adv-lr 2e-5 --optimizer-args '{"betas": [0, 0.99]}' \
     --batches 1 --loader-workers 16 --load-state checkpoint.pt \
     --epochs 9999    
-
-    ###--augment --aug-shift 64 \
-    ###--crop 12 --crop-step 12 --pad 3 --scale-factor 8 \
-    ### --val-in-patterns "val/R0-*.npy,val/R1-*.npy" \
-    ### --val-tgt-patterns "val/D0-*.npy,val/D1-*.npy" \
-    ###--in-norms RnD.R0,RnD.R1 --tgt-norms RnD.D0,RnD.D1 \
-    ###--model model.Net --callback-at . \
-    ###--lr 1e-5 --batch-size 1 \
-    ###--epochs 1024 --seed $RANDOM
 cd scripts
 
 ###Once your job completes, collect the job output files from the /tmp space of each node:
+mkdir /tmp/Bayu_SR_outputdir
 collect.bash /tmp/Bayu_SR_outputdir ${SCRATCH}/datafiles/new_output_collected  
-###collect.bash /tmp/outputfile ${SCRATCH}/datafiles/new_output_collected
-
 
 date
 conda deactivate
+
+###srun m2m.py train \
+###collect.bash /tmp/outputfile ${SCRATCH}/datafiles/new_output_collected
+###--augment --aug-shift 64 \
+###--crop 12 --crop-step 12 --pad 3 --scale-factor 8 \
+### --val-in-patterns "val/R0-*.npy,val/R1-*.npy" \
+### --val-tgt-patterns "val/D0-*.npy,val/D1-*.npy" \
+###--in-norms RnD.R0,RnD.R1 --tgt-norms RnD.D0,RnD.D1 \
+###--model model.Net --callback-at . \
+###--lr 1e-5 --batch-size 1 \
+###--epochs 1024 --seed $RANDOM
 
