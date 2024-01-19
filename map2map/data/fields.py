@@ -57,7 +57,9 @@ class FieldDataset(Dataset):
         in_file_lists = [sorted(glob(p)) for p in in_patterns]
 
         num_snapshots = len(in_file_lists[0])
-        sample_idx = list(WeightedRandomSampler(weights=torch.ones(num_snapshots), num_samples= min(64, num_snapshots), replacement=False))
+        #Bayu, 24/01/16. 3.6Gb per file. 15 files each for the displacement and velocity field gives 108Gb total. Frontera GPU node RAM: 128GB (2133 MT/s) DDR4
+        sample_idx = list(WeightedRandomSampler(weights=torch.ones(num_snapshots), num_samples= min(15, num_snapshots), replacement=False))
+        #sample_idx = list(WeightedRandomSampler(weights=torch.ones(num_snapshots), num_samples= min(64, num_snapshots), replacement=False))
 
         if sampling:
             sampled_in_list = [[x[i] for i in sample_idx] for x in in_file_lists]
@@ -230,7 +232,7 @@ class FieldDataset(Dataset):
         if self.style:
             style = np.load(self.style_files[ifile])
             style = torch.from_numpy(style.astype(np.float32))
-        print('field while loading files',style.shape)
+        #print('field while loading files',style.shape)
 
         if self.in_norms is not None:
             for norm, x in zip(self.in_norms, in_fields):
