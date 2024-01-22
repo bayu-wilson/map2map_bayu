@@ -58,7 +58,7 @@ class FieldDataset(Dataset):
 
         num_snapshots = len(in_file_lists[0])
         #Bayu, 24/01/16. 3.6Gb per file. 15 files each for the displacement and velocity field gives 108Gb total. Frontera GPU node RAM: 128GB (2133 MT/s) DDR4
-        sample_idx = list(WeightedRandomSampler(weights=torch.ones(num_snapshots), num_samples= min(15, num_snapshots), replacement=False))
+        sample_idx = list(WeightedRandomSampler(weights=torch.ones(num_snapshots), num_samples= min(5, num_snapshots), replacement=False))
         #sample_idx = list(WeightedRandomSampler(weights=torch.ones(num_snapshots), num_samples= min(64, num_snapshots), replacement=False))
 
         if sampling:
