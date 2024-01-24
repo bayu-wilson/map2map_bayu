@@ -360,18 +360,23 @@ def train(epoch, loader, model, criterion, optimizer, scheduler,
     for i, data in enumerate(loader):
         batch = epoch * len(loader) + i + 1
 
-        #print("Epoch: {}, Batch: {}".format(epoch,batch),flush=True)
+        #BAYU 240117
+        print("Epoch: {}, Batch: {}".format(epoch,batch),flush=True)
         #print("epoch : ", epoch)
         #print("i : ",i)
         #print("\n",flush=True)
+        #BAYU 240117
         input, target, style = data['input'], data['target'], data['style']
 
+        #print(f"input = input.to(device, non_blocking=True), Device: {device}",flush=True)
         input = input.to(device, non_blocking=True)
+        #print("target = target.to(device, non_blocking=True), Device: {device}",flush=True)        
         target = target.to(device, non_blocking=True)
         style = style.to(device, non_blocking=True)
         
         #print(input.shape, style.shape)
         output = model(input, style)
+        #print("output = model(input, style)",flush=True)
         if batch <= 5 and rank == 0:
             print('##### batch :', batch)
             print('input shape :', input.shape)
@@ -551,11 +556,20 @@ def train(epoch, loader, model, criterion, optimizer, scheduler,
 	#Bayu only plot last 6 channels, 23/09/22
         fig = plt_slices(
             #input[-1], output[-1], target[-1], output[-1] - target[-1],
-            input[-1], output[-1][-6:], target[-1][-6:], output[-1][-6:] - target[-1][-6:],
+            input[-1][-6:-3], output[-1][-6:-3], target[-1][-6:-3], output[-1][-6:-3] - target[-1][-6:-3],
             title=['in', 'out', 'tgt', 'out - tgt'],
             **args.misc_kwargs,
         )
-        logger.add_figure('fig/train', fig, global_step=epoch+1)
+        logger.add_figure('fig/train/disp', fig, global_step=epoch+1)
+        fig.clf()
+
+        fig = plt_slices(
+            #input[-1], output[-1], target[-1], output[-1] - target[-1],
+            input[-1][-3:], output[-1][-3:], target[-1][-3:], output[-1][-3:] - target[-1][-3:],
+            title=['in', 'out', 'tgt', 'out - tgt'],
+            **args.misc_kwargs,
+        )
+        logger.add_figure('fig/train/vel', fig, global_step=epoch+1)
         fig.clf()
 
         #if epoch%args.ps_interval == 0:
@@ -569,6 +583,22 @@ def train(epoch, loader, model, criterion, optimizer, scheduler,
         #logger.add_figure('fig/train/power/lag', fig, global_step=epoch+1)
         #fig.clf()
         #torch.cuda.memory_snapshot()
+
+        fig = plt_power(1.0,
+            dis=[input[:,-6:-3,:,:,:], output[:,-6:-3,:,:,:], target[:,-6:-3,:,:,:]],
+            label=['in', 'out', 'tgt'],
+            **args.misc_kwargs,
+        )
+        logger.add_figure('fig/train/power/eul/disp', fig, global_step=epoch+1)
+        fig.clf()
+
+        #fig = plt_power(1.0,
+        #    dis=[input[:,-3:,:,:,:], input[:,-3:,:,:,:], input[:,-3:,:,:,:]],
+        #    label=['in', 'out', 'tgt'],
+        #    **args.misc_kwargs,
+        #)
+        #logger.add_figure('fig/train/power/eul/vel', fig, global_step=epoch+1)
+        #fig.clf()
 
         #fig = plt_power(1.0,
         #    dis=[input, output, target],
